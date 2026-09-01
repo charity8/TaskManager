@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Task Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
+        body { background: #0a0e1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .app { background: rgba(10, 14, 26, 0.85); backdrop-filter: blur(8px); max-width: 480px; width: 100%; border-radius: 30px; padding: 25px; box-shadow: 0 20px 60px rgba(74, 144, 217, 0.15); border: 1px solid rgba(74, 144, 217, 0.15); max-height: 95vh; overflow-y: auto; }
+        h1 { font-size: 28px; color: #4A90D9; text-align: center; margin-bottom: 5px; }
+        .sub { color: #6a8db5; text-align: center; margin-bottom: 20px; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #1a2a4a; border-radius: 10px; margin-bottom: 10px; font-size: 14px; background: rgba(20, 30, 60, 0.6); color: #aac8ff; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #4A90D9; }
+        button { width: 100%; padding: 14px; background: #4A90D9; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #5a9fe9; transform: scale(1.02); }
+        .btn-danger { background: #E74C3C; }
+        .btn-danger:hover { background: #ff5a4a; }
+        .btn-success { background: #34A853; }
+        .btn-success:hover { background: #4cba6a; }
+        .btn-secondary { background: #2a3a5a; }
+        .btn-secondary:hover { background: #3a4a6a; }
+        .hidden { display: none !important; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .bell-icon { font-size: 24px; cursor: pointer; position: relative; color: #4A90D9; }
+        .bell-icon .badge { position: absolute; top: -8px; right: -8px; background: #E74C3C; color: white; font-size: 10px; border-radius: 50%; padding: 2px 6px; font-weight: bold; }
+        .bell-dropdown { background: rgba(20, 30, 60, 0.95); border: 1px solid #1a2a4a; border-radius: 12px; padding: 15px; margin-top: 10px; max-height: 200px; overflow-y: auto; display: none; }
+        .bell-dropdown.show { display: block; }
+        .bell-dropdown .notification-item { color: #aac8ff; padding: 8px 0; border-bottom: 1px solid #1a2a4a; font-size: 13px; }
+        .bell-dropdown .notification-item:last-child { border-bottom: none; }
+        .bell-dropdown .notification-item .task-title { color: #4A90D9; font-weight: bold; }
+        .bell-dropdown .notification-item .due-date { color: #6a8db5; font-size: 11px; }
+        .task-card { background: rgba(20, 30, 60, 0.4); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid #4A90D9; }
+        .task-card .title { color: #fff; font-weight: bold; font-size: 16px; }
+        .task-card .desc { color: #aac8ff; font-size: 13px; margin: 5px 0; }
+        .task-card .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #6a8db5; margin-top: 5px; }
+        .task-card .meta span { background: rgba(20, 30, 60, 0.5); padding: 2px 10px; border-radius: 20px; }
+        .task-card .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .task-card .actions button { flex: 1; padding: 8px; font-size: 12px; }
+        .category-Work { border-left-color: #4A90D9; }
+        .category-Personal { border-left-color: #34A853; }
+        .category-Urgent { border-left-color: #E74C3C; }
+        .priority-High { background: rgba(231, 76, 60, 0.2); }
+        .priority-Medium { background: rgba(249, 171, 0, 0.2); }
+        .priority-Low { background: rgba(52, 168, 83, 0.2); }
+        .filter-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+        .filter-buttons button { flex: 1; padding: 8px; font-size: 12px; background: #2a3a5a; }
+        .filter-buttons button.active { background: #4A90D9; }
+        .tab-buttons { display: flex; gap: 8px; margin: 10px 0; }
+        .tab-buttons button { flex: 1; padding: 8px; font-size: 12px; background: #2a3a5a; }
+        .tab-buttons button.active { background: #4A90D9; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .modal.hidden { display: none !important; }
+        .modal-content { background: #0a0e1a; padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid #1a2a4a; position: relative; }
+        .modal-content h2 { color: #4A90D9; margin-bottom: 15px; }
+        .modal-content .close { position: absolute; top: 10px; right: 15px; color: #6a8db5; font-size: 28px; cursor: pointer; font-weight: bold; }
+        .modal-content .close:hover { color: #fff; }
+        .history-task { opacity: 0.6; border-left-color: #6a8db5; }
+        .history-task .title { color: #6a8db5; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0a0e1a; }
+        ::-webkit-scrollbar-thumb { background: #4A90D9; border-radius: 10px; }
+        .logout-btn { width: auto; padding: 6px 15px; font-size: 12px; background: #E74C3C; border: none; border-radius: 8px; color: white; cursor: pointer; }
+        .logout-btn:hover { background: #ff5a4a; }
+        .refresh-btn { width: auto; padding: 6px 15px; font-size: 12px; background: #4A90D9; border: none; border-radius: 8px; color: white; cursor: pointer; }
+        .refresh-btn:hover { background: #5a9fe9; }
+        .success-msg { color: #34A853; text-align: center; padding: 10px; display: none; }
+        .success-msg.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <div class="header">
+            <h1 style="font-size:22px;">📋 Tasks</h1>
+            <div style="display:flex;gap:10px;align-items:center;">
+                <div class="bell-icon" id="bellIcon">
+                    🔔
+                    <span class="badge" id="bellBadge">0</span>
+                </div>
+                <button class="refresh-btn" id="refreshBtn">⟳</button>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+        <div class="bell-dropdown" id="bellDropdown">
+            <div id="bellContent">Loading notifications...</div>
+        </div>
+
+        <div id="successMsg" class="success-msg">✅ Task saved successfully!</div>
+
+        <div style="display:flex;gap:10px;margin:15px 0;">
+            <input type="text" id="searchInput" placeholder="Search tasks..." style="flex:2;">
+            <button id="addTaskBtn" style="flex:1;background:#34A853;">+ New</button>
+        </div>
+
+        <div class="tab-buttons">
+            <button data-tab="active" class="active">Active</button>
+            <button data-tab="history">History</button>
+        </div>
+        <div class="filter-buttons" id="filterButtons">
+            <button data-filter="all" class="active">All</button>
+            <button data-filter="Work">Work</button>
+            <button data-filter="Personal">Personal</button>
+            <button data-filter="Urgent">Urgent</button>
+        </div>
+        <div id="taskList"></div>
+        <div id="noTasks" class="hidden" style="text-align:center;color:#6a8db5;padding:30px 0;">No tasks yet. Add one!</div>
+    </div>
+
+    <div id="taskModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2 id="modalTitle">Add Task</h2>
+            <input type="text" id="taskTitle" placeholder="Title">
+            <textarea id="taskDesc" placeholder="Description" rows="2"></textarea>
+            <select id="taskCategory">
+                <option value="Work">Work</option>
+                <option value="Personal">Personal</option>
+                <option value="Urgent">Urgent</option>
+            </select>
+            <select id="taskPriority">
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+            </select>
+            <input type="date" id="taskDeadline">
+            <button id="saveTaskBtn">Save Task</button>
+            <input type="hidden" id="editTaskId">
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let token = localStorage.getItem('task_token');
+        let tasks = [];
+        let historyTasks = [];
+        let currentFilter = 'all';
+        let currentTab = 'active';
+
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // DOM references
+        const taskList = document.getElementById('taskList');
+        const noTasks = document.getElementById('noTasks');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskModal = document.getElementById('taskModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const taskTitle = document.getElementById('taskTitle');
+        const taskDesc = document.getElementById('taskDesc');
+        const taskCategory = document.getElementById('taskCategory');
+        const taskPriority = document.getElementById('taskPriority');
+        const taskDeadline = document.getElementById('taskDeadline');
+        const saveTaskBtn = document.getElementById('saveTaskBtn');
+        const editTaskId = document.getElementById('editTaskId');
+        const searchInput = document.getElementById('searchInput');
+        const filterBtns = document.querySelectorAll('#filterButtons button');
+        const tabBtns = document.querySelectorAll('.tab-buttons button');
+        const bellIcon = document.getElementById('bellIcon');
+        const bellDropdown = document.getElementById('bellDropdown');
+        const bellContent = document.getElementById('bellContent');
+        const bellBadge = document.getElementById('bellBadge');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const successMsg = document.getElementById('successMsg');
+
+        // --- MODAL CLOSE FUNCTIONS ---
+        function closeModalFunc() {
+            taskModal.classList.add('hidden');
+        }
+
+        // Close modal when X is clicked
+        closeModal.addEventListener('click', closeModalFunc);
+
+        // Close modal when clicking outside the modal content
+        window.addEventListener('click', function(e) {
+            if (e.target === taskModal) {
+                closeModalFunc();
+            }
+        });
+
+        // Close modal when Escape key is pressed
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModalFunc();
+            }
+        });
+
+        // --- LOGOUT ---
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('task_token');
+            window.location.href = '/';
+        });
+
+        // --- REFRESH ---
+        refreshBtn.addEventListener('click', () => {
+            loadTasks();
+            checkUpcoming();
+            successMsg.classList.remove('show');
+        });
+
+        // --- LOAD TASKS ---
+        async function loadTasks() {
+            try {
+                const res = await fetch(API + '/tasks', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('task_token');
+                    window.location.href = '/';
+                    return;
+                }
+                tasks = await res.json();
+                console.log('✅ Tasks loaded:', tasks.length);
+                renderTasks();
+                if (tasks.length > 0) {
+                    noTasks.classList.add('hidden');
+                }
+            } catch (err) { alert('Failed to load tasks.'); }
+        }
+
+        // --- LOAD HISTORY ---
+        async function loadHistory() {
+            try {
+                const res = await fetch(API + '/tasks/history', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                historyTasks = await res.json();
+                renderTasks();
+            } catch (err) { alert('Failed to load history.'); }
+        }
+
+        // --- RENDER TASKS ---
+        function renderTasks() {
+            const search = searchInput.value.toLowerCase();
+            let data = currentTab === 'active' ? tasks : historyTasks;
+            let filtered = data.filter(t => {
+                const matchCategory = currentFilter === 'all' || t.category === currentFilter;
+                const matchSearch = t.title.toLowerCase().includes(search) || (t.description && t.description.toLowerCase().includes(search));
+                return matchCategory && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                taskList.innerHTML = '';
+                noTasks.classList.remove('hidden');
+                noTasks.textContent = currentTab === 'active' ? 'No active tasks. Add one!' : 'No tasks in history.';
+                return;
+            }
+            noTasks.classList.add('hidden');
+
+            taskList.innerHTML = filtered.map(t => {
+                const isHistory = currentTab === 'history';
+                return `
+                    <div class="task-card category-${t.category} priority-${t.priority} ${isHistory ? 'history-task' : ''}">
+                        <div class="title">${t.title} ${isHistory ? '🗑️' : ''}</div>
+                        <div class="desc">${t.description || ''}</div>
+                        <div class="meta">
+                            <span>${t.category}</span>
+                            <span>${t.priority}</span>
+                            ${t.deadline ? `<span>📅 ${new Date(t.deadline).toLocaleDateString()}</span>` : ''}
+                            ${t.is_completed ? '<span>✅ Done</span>' : '<span>⏳ Pending</span>'}
+                            ${isHistory ? `<span>🗑️ Deleted</span>` : ''}
+                        </div>
+                        <div class="actions">
+                            ${!isHistory ? `
+                                ${!t.is_completed ? `<button class="btn-success" onclick="toggleComplete(${t.id}, true)">Complete</button>` : `<button class="btn-secondary" onclick="toggleComplete(${t.id}, false)">Undo</button>`}
+                                <button onclick="editTask(${t.id})">✏️ Edit</button>
+                                <button class="btn-danger" onclick="deleteTask(${t.id})">🗑️ Delete</button>
+                            ` : `
+                                <button class="btn-success" onclick="restoreTask(${t.id})">↩️ Restore</button>
+                                <button class="btn-danger" onclick="permanentDelete(${t.id})">🔥 Permanently Delete</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- TASK FUNCTIONS ---
+        async function toggleComplete(id, status) {
+            try {
+                await fetch(API + '/tasks/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ is_completed: status })
+                });
+                loadTasks();
+                checkUpcoming();
+            } catch (err) { alert('Failed to update task.'); }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Move this task to history?')) return;
+            try {
+                await fetch(API + '/tasks/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadTasks();
+                checkUpcoming();
+            } catch (err) { alert('Failed to delete task.'); }
+        }
+
+        async function restoreTask(id) {
+            try {
+                await fetch(API + '/tasks/restore/' + id, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadHistory();
+            } catch (err) { alert('Failed to restore task.'); }
+        }
+
+        async function permanentDelete(id) {
+            if (!confirm('Permanently delete this task? This cannot be undone.')) return;
+            try {
+                await fetch(API + '/tasks/permanent/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadHistory();
+            } catch (err) { alert('Failed to permanently delete task.'); }
+        }
+
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            modalTitle.textContent = 'Edit Task';
+            taskTitle.value = task.title;
+            taskDesc.value = task.description || '';
+            taskCategory.value = task.category;
+            taskPriority.value = task.priority;
+            taskDeadline.value = task.deadline ? task.deadline.split('T')[0] : '';
+            editTaskId.value = id;
+            taskModal.classList.remove('hidden');
+        }
+
+        addTaskBtn.addEventListener('click', () => {
+            modalTitle.textContent = 'Add Task';
+            taskTitle.value = '';
+            taskDesc.value = '';
+            taskCategory.value = 'Work';
+            taskPriority.value = 'High';
+            taskDeadline.value = '';
+            editTaskId.value = '';
+            taskModal.classList.remove('hidden');
+        });
+
+        saveTaskBtn.addEventListener('click', async () => {
+            const data = {
+                title: taskTitle.value.trim(),
+                description: taskDesc.value.trim() || null,
+                category: taskCategory.value,
+                priority: taskPriority.value,
+                deadline: taskDeadline.value || null
+            };
+            if (!data.title) return alert('Title is required.');
+            const method = editTaskId.value ? 'PUT' : 'POST';
+            const url = editTaskId.value ? API + '/tasks/' + editTaskId.value : API + '/tasks';
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    taskModal.classList.add('hidden');
+                    successMsg.textContent = '✅ Task saved successfully!';
+                    successMsg.classList.add('show');
+                    await loadTasks();
+                    setTimeout(() => {
+                        successMsg.classList.remove('show');
+                    }, 3000);
+                } else {
+                    const err = await res.json();
+                    alert('Error: ' + (err.detail || 'Unknown error'));
+                }
+            } catch (err) { alert('Network error.'); }
+        });
+
+        // --- UPCOMING TASKS ---
+        async function checkUpcoming() {
+            try {
+                const res = await fetch(API + '/tasks/upcoming', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const upcoming = await res.json();
+                bellBadge.textContent = upcoming.length;
+                if (upcoming.length === 0) {
+                    bellBadge.style.display = 'none';
+                } else {
+                    bellBadge.style.display = 'inline';
+                    bellContent.innerHTML = upcoming.map(t => `
+                        <div class="notification-item">
+                            <div class="task-title">${t.title}</div>
+                            <div class="due-date">📅 Due: ${new Date(t.deadline).toLocaleDateString()}</div>
+                            <div style="font-size:11px;color:#F9AB00;">⚠️ Upcoming!</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) { console.log('No upcoming tasks'); }
+        }
+
+        bellIcon.addEventListener('click', () => {
+            bellDropdown.classList.toggle('show');
+            if (bellDropdown.classList.contains('show')) {
+                checkUpcoming();
+            }
+        });
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTab = btn.dataset.tab;
+                if (currentTab === 'history') loadHistory();
+                else loadTasks();
+            });
+        });
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderTasks();
+            });
+        });
+
+        searchInput.addEventListener('input', renderTasks);
+
+        // --- LOAD EVERYTHING ---
+        loadTasks();
+        checkUpcoming();
+    </script>
+</body>
+</html>

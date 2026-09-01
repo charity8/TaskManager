@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
+        body { background: #0a0e1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .app { background: rgba(10, 14, 26, 0.85); backdrop-filter: blur(8px); max-width: 400px; width: 100%; border-radius: 30px; padding: 30px; border: 1px solid rgba(74, 144, 217, 0.15); }
+        h1 { font-size: 32px; color: #4A90D9; text-align: center; margin-bottom: 5px; }
+        .sub { color: #6a8db5; text-align: center; margin-bottom: 25px; font-size: 16px; }
+        input { width: 100%; padding: 15px; border: 1px solid #1a2a4a; border-radius: 12px; margin-bottom: 12px; font-size: 16px; background: rgba(20, 30, 60, 0.6); color: #aac8ff; }
+        input:focus { outline: none; border-color: #4A90D9; }
+        button { width: 100%; padding: 16px; background: #4A90D9; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #5a9fe9; }
+        .switch { text-align: center; margin-top: 15px; color: #4a6a8a; font-size: 14px; }
+        .switch a { color: #4A90D9; font-weight: bold; text-decoration: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <h1>📋 Task Manager</h1>
+        <p class="sub" id="authTitle">Welcome Back</p>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button id="submitAuth">Login</button>
+        <p class="switch">
+            <span id="toggleText">Don't have an account?</span>
+            <a href="#" id="toggleLink">Sign Up</a>
+        </p>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let isLogin = true;
+
+        const authTitle = document.getElementById('authTitle');
+        const submitAuth = document.getElementById('submitAuth');
+        const toggleLink = document.getElementById('toggleLink');
+        const toggleText = document.getElementById('toggleText');
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLogin = !isLogin;
+            authTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
+            submitAuth.textContent = isLogin ? 'Login' : 'Sign Up';
+            toggleText.textContent = isLogin ? "Don't have an account?" : "Already have an account?";
+            toggleLink.textContent = isLogin ? 'Sign Up' : 'Login';
+            email.value = ''; password.value = '';
+        });
+
+        submitAuth.addEventListener('click', async () => {
+            const e = email.value.trim(), p = password.value.trim();
+            if (!e || !p) return alert('Please fill in all fields');
+            submitAuth.textContent = 'Please wait...';
+            try {
+                const endpoint = isLogin ? '/login' : '/signup';
+                const res = await fetch(API + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: e, password: p })
+                });
+                const data = await res.json();
+                if (data.access_token) {
+                    localStorage.setItem('task_token', data.access_token);
+                    window.location.href = '/dashboard.html';
+                } else if (data.id) {
+                    alert('Account created! Please login.');
+                    isLogin = true;
+                    authTitle.textContent = 'Welcome Back';
+                    submitAuth.textContent = 'Login';
+                    toggleText.textContent = "Don't have an account?";
+                    toggleLink.textContent = 'Sign Up';
+                    password.value = '';
+                } else {
+                    alert(isLogin ? 'Invalid credentials' : 'Email already exists');
+                }
+            } catch (err) { alert('Server error. Is backend running?'); }
+            submitAuth.textContent = isLogin ? 'Login' : 'Sign Up';
+        });
+    </script>
+</body>
+</html>
