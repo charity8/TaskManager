@@ -237,10 +237,10 @@ def restore_task(task_id: int, token: str = Depends(oauth2_scheme), db: Session 
     db.commit()
     return {"message": "Task restored from history"}
 
-# NEW HOMEPAGE ROUTE (Added to fix "Not Found" on the main link)
+# NEW HOMEPAGE ROUTE
 @app.get("/")
 def read_root():
     return {"message": "Task Manager API is running!"}
 
-# COMMENTED OUT (This was blocking your API and causing the "Not Found" error)
+# COMMENTED OUT
 # app.mount("/", StaticFiles(directory="static", html=True), name="static")
