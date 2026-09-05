@@ -234,9 +234,9 @@ def restore_task(task_id: int, token: str = Depends(oauth2_scheme), db: Session 
     return {"message": "Task restored from history"}
 
 # ---------- ROOT ROUTE ----------
-@app.get("/")
-def root():
-    return {"message": "Task Manager API is running! Visit /dashboard.html to use the app."}
+# @app.get("/")
+# def root():
+#     return {"message": "Task Manager API is running! Visit /dashboard.html to use the app."}
 
 # ---------- SERVE STATIC FILES (Frontend) ----------
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
