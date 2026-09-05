@@ -99,7 +99,6 @@ def get_tasks(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    # Only return tasks that are NOT deleted
     tasks = db.query(Task).filter(Task.user_id == user_id, Task.is_deleted == False).order_by(Task.deadline.asc()).all()
     return tasks
 
@@ -111,7 +110,6 @@ def get_history(token: str = Depends(oauth2_scheme), db: Session = Depends(get_d
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    # Return ONLY deleted tasks
     tasks = db.query(Task).filter(Task.user_id == user_id, Task.is_deleted == True).order_by(Task.deleted_at.desc()).all()
     return tasks
 
@@ -123,7 +121,6 @@ def get_upcoming_tasks(token: str = Depends(oauth2_scheme), db: Session = Depend
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    # Get tasks due in the next 3 days
     now = datetime.utcnow()
     three_days_later = now + timedelta(days=3)
     tasks = db.query(Task).filter(
@@ -198,7 +195,6 @@ def delete_task(task_id: int, token: str = Depends(oauth2_scheme), db: Session =
     if not existing_task:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    # Soft delete
     existing_task.is_deleted = True
     existing_task.deleted_at = datetime.utcnow()
     db.commit()
@@ -237,10 +233,10 @@ def restore_task(task_id: int, token: str = Depends(oauth2_scheme), db: Session 
     db.commit()
     return {"message": "Task restored from history"}
 
-# NEW HOMEPAGE ROUTE
+# ---------- ROOT ROUTE ----------
 @app.get("/")
-def read_root():
-    return {"message": "Task Manager API is running!"}
+def root():
+    return {"message": "Task Manager API is running! Visit /dashboard.html to use the app."}
 
-# COMMENTED OUT
-# app.mount("/", StaticFiles(directory="static", html=True), name="static")
+# ---------- SERVE STATIC FILES (Frontend) ----------
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
